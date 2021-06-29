@@ -1,0 +1,146 @@
+-- DROP 
+DROP TABLE member CASCADE CONSTRAINTS;
+DROP TABLE grade CASCADE CONSTRAINTS;
+DROP TABLE board CASCADE CONSTRAINTS;
+DROP TABLE notice CASCADE CONSTRAINTS;
+DROP TABLE feedback;
+DROP TABLE type;
+DROP TABLE list;
+DROP SEQUENCE board_seq;
+DROP SEQUENCE notice_seq;
+DROP SEQUENCE feedback_seq;
+DROP SEQUENCE type_seq;
+DROP SEQUENCE list_seq;
+
+-- CREATE TABLE
+-- 멤버
+CREATE TABLE grade(
+   gradeNo NUMBER(2) CONSTRAINT grade_gradeNo_pk PRIMARY KEY,
+   gradeName VARCHAR2(20)
+);
+CREATE TABLE member(
+ id VARCHAR2(60) CONSTRAINT member_id_pk PRIMARY KEY, -- 아이디
+ pw VARCHAR2(60) CONSTRAINT member_pw_nn NOT NULL, -- 비밀번호
+ name VARCHAR2(30) CONSTRAINT member_name_nn NOT NULL, -- 이름
+ gender VHACHAR2(6) CONSTRAINT member_gender_nn NOT NULL,
+ tel VARCHAR2(20), -- 연락처
+ email VARCHAR2(100) CONSTRAINT member_email_nn NOT NULL, -- 이메일
+ status VARCHAR2(6) DEFAULT '정상' 
+       CONSTRAINT member_status_ck CHECK(status in ('정상','강퇴','탈퇴')), -- 상태
+ gradeNo NUMBER(2) DEFAULT 1 CONSTRAINT member_gradeNo_fk REFERENCES grade(gradeNo) -- 등급
+);
+-- 게시판
+CREATE TABLE board(
+ no NUMBER PRIMARY KEY,
+ title VARCHAR2(300) NOT NULL,
+ content VARCHAR2(2000) NOT NULL,
+ id VARCHAR2(30) NOT NULL REFERENCES member(id),
+ writeDate DATE DEFAULT sysdate,
+ hit NUMBER DEFAULT 0
+);
+-- 공지사항
+CREATE TABLE notice
+(
+ no NUMBER PRIMARY KEY, 
+ title VARCHAR2(300) NOT NULL,
+ content VARCHAR2(2000) NOT NULL,
+ startDate DATE DEFAULT sysdate,
+ endDate DATE DEFAULT '9999-12-30',
+ writeDate DATE DEFAULT sysdate
+);
+-- 피드백 + 수정 예정 
+CREATE TABLE feedback(
+  no NUMBER PRIMARY KEY,
+  title VARCHAR2(300) NOT NULL,
+  content VARCHAR2(2000) NOT NULL,
+  id VARCHAR2(20) NOT NULL REFERENCES member(id),
+  writeDate DATE DEFAULT sysdate,
+  sender VARCHAR(20) NOT NULL,
+  accepter VARCHAR(20) NOT NULL,
+  refNo NUMBER REFERENCES feedback(no) ,
+  ordNo NUMBER,
+  levNo NUMBER,
+  parentNo NUMBER  REFERENCES feedback(no) ON DELETE CASCADE
+);
+-- 유형관리
+CREATE TABLE type(
+ no NUMBER(12) PRIMARY KEY,
+ type VARCHAR2(12) NOT NULL,
+ image VARCHAR2(3000) NOT NULL,
+ content VARCHAR2(3000) NOT NULL,
+ gType VARCHAR2(3000) NOT NULL,
+ gImage VARCHAR2(3000) NOT NULL,
+ bType VARCHAR2(3000) NOT NULL,
+ bImage VARCHAR2(3000) NOT NULL,
+ updateDate DATE DEFAULT sysdate
+);
+-- 테스트 목록
+CREATE TABLE list (
+ no NUMBER(12) CONSTRAINT list_no_pk PRIMARY KEY,
+ title VARCHAR2(300) CONSTRAINT list_title_nn NOT NULL,
+ image VARCHAR2(3000) CONSTRAINT list_image_nn NOT NULL,
+ url VARCHAR(3000) CONSTRAINT list_url_nn NOT NULL,
+ hit NUMBER DEFAULT 0 CONSTRAINT list_hit_nn NOT NULL    
+);
+
+-- CREATE SEQ
+CREATE SEQUENCE board_seq;
+CREATE SEQUENCE notice_seq;
+CREATE SEQUENCE feedback_seq;
+CREATE SEQUENCE type_seq;
+CREATE SEQUENCE list_seq;
+
+-- 샘플 데이터 넣기
+-- 회원 관리
+-- <<grade 샘플 데이터>>
+INSERT INTO grade VALUES (1, '일반회원');
+INSERT INTO grade VALUES (9, '관리자');
+INSERT INTO grade VALUES (4, '강퇴');
+
+-- <<member 샘플 데이터>>
+-- 관리자 계정입력하기
+INSERT INTO member(id, pw, name, gender, tel, email, status, gradeNo)
+VALUES('admin','1111', '궁금해', '남자','010-9999-9999','admin@naver.com', '정상', 9);
+
+-- 일반회원 계정입력하기 - 회원가입을 할때 등급번호를 선택하지는 않는다. 기본값은 1(일반회원)로 셋팅해서 사용한다.
+INSERT INTO member(id, pw, name, gender, tel, email, status)
+VALUES('test','1111', '홍길동', '남자', '010-1111-1111','leelj1@nate.com', '정상');
+
+-- 게시판
+INSERT INTO board(no, title, content, id)
+VALUES(board_seq.nextval, 'infj 나와봐', 'estp어때?', 'test');
+
+INSERT INTO board(no, title, content, id)
+VALUES(board_seq.nextval, 'E들 모여라', '모여라~~~~~!!', 'test');
+
+INSERT INTO board(no, title, content, id)
+VALUES(board_seq.nextval, '오늘 날씨 미쳤다', '진짜 좋네...', 'test');
+-- 공지사항
+INSERT INTO notice (no, title, content, startDate, endDate)
+VALUES(notice_seq.nextval, '샘플 테스트', '내용 입력', '2021-03-23', '2021-07-23');
+
+-- 피드백
+INSERT INTO feedback(no, title, content, id, sender, accepter, refNo, ordNo, levNo, parentNo)
+VALUES(feedback_seq.nextval, '피드백 테스트 제목','피드백 테스트 내용', 'test', 'test', 'admin',
+feedback_seq.nextval, 1, 0, feedback_seq.nextval);
+
+INSERT INTO feedback(no, title, content, id, sender, accepter, refNo, ordNo, levNo, parentNo)
+VALUES(feedback_seq.nextval, '피드백 테스트 제목2','피드백 테스트 내용2', 'test', 'test', 'admin',
+feedback_seq.nextval, 1, 0, feedback_seq.nextval);
+
+UPDATE feedback
+SET ordNo = ordNo + 1
+WHERE refNo = 1 and ordNo >= 2;
+
+INSERT INTO feedback(no, title, content, id, sender, accepter, refNo, ordNo, levNo, parentNo)
+VALUES(feedback_seq.nextval, '[답변]자바란?','객체지향적 프로그래밍 언어', 'admin', 'admin', 'test',
+1, 2, 1, 1);
+
+-- 유형 관리
+INSERT INTO type(no, type, image, content, gType, gImage, bType, bImage)
+VALUES(type_seq.nextval, 'ENFP', 'ENFP', 'ENFP', 'ENFP','ENFP', 'ENFP', 'ENFP');
+
+-- 설문 관리
+INSERT INTO list(no, title, image, url)
+VALUES(list_seq.NEXTVAL, '나와 닮은 영화속 주인공은?', '/image/movieMBTI.jpg', '/mbti/movieMBTI.do');
+COMMIT;

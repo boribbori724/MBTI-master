@@ -1,0 +1,9 @@
+-- "--" 표시는 실행되지 않는 주석입니다.
+
+-- 사용자 생성하기 -- 이름만 등록한 상태
+-- 한번만 가능하다. 동일한 이름으로 2개의 사용자를 생성이 안된다.
+-- oracle 관리자로 접속된 상태에서 가능
+create user team1 identified by team1;
+
+-- 사용자에 대한 권한 부여 -- 접속, 작업
+grant connect, resource to team1;
